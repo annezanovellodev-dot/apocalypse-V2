@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Z-SURVIVAL - Plateau de jeu multijoueur Railway</title>
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Railway Client -->
+    <script src="../components/railway-client.js"></script>
+    <script src="security-system.js"></script>
+    <script src="security-admin-panel.js"></script>
+    <script src="security-headers.js"></script>
+    <script src="security-testing.js"></script>
+    <style>
+        :root {
+            --primary: #0a0a0f;
+            --secondary: #1a1a2e;
+            --accent: #16213e;
+            --highlight: #e94560;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --danger: #ff4757;
+            --info: #3498db;
+            --text: #f1f1f1;
+            --text-muted: #a8a8a8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(233, 69, 96, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(46, 213, 115, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding-top: 2rem;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            background: linear-gradient(45deg, #fff, var(--highlight));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .subtitle {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .feature-card {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(233, 69, 96, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--highlight);
+        }
+
+        .feature-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .action-card {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .action-card.primary {
+            background: linear-gradient(135deg, var(--highlight), #ff6b81);
+            border: none;
+        }
+
+        .action-card.secondary {
+            background: linear-gradient(135deg, var(--info), #5dade2);
+            border: none;
+        }
+
+        .action-card.success {
+            background: linear-gradient(135deg, var(--success), #58d68d);
+            border: none;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            border: none;
+            border-radius: 20px;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .action-button:hover::before {
+            left: 100%;
+        }
+
+        .host-btn {
+            background: linear-gradient(135deg, var(--highlight), #ff6b81);
+            color: white;
+            box-shadow: 0 15px 40px rgba(233, 69, 96, 0.4);
+        }
+
+        .host-btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(233, 69, 96, 0.6);
+        }
+
+        .controller-btn {
+            background: linear-gradient(135deg, var(--info), #5dade2);
+            color: white;
+            box-shadow: 0 15px 40px rgba(52, 152, 219, 0.4);
+        }
+
+        .controller-btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(52, 152, 219, 0.6);
+        }
+
+        .btn-icon {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        .controller-btn .btn-icon {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .btn-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .btn-title {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-subtitle {
+            display: block;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-arrow {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .action-button:hover .btn-arrow {
+            transform: translateX(5px);
+        }
+
+        .action-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-description {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        .requirements {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .requirements-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--glass);
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .requirement-icon {
+            font-size: 1.5rem;
+            color: var(--success);
+        }
+
+        .requirement-text {
+            color: var(--text-muted);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: var(--highlight);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #ff6b81;
+        }
+
+        .quick-start {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 2px solid var(--glass-border);
+        }
+
+        .quick-start-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .quick-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--glass);
+            border-radius: 10px;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: var(--highlight);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            .features,
+            .actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .requirements-grid,
+            .quick-steps {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">☣️</div>
+            <h1 class="title">Z-SURVIVAL</h1>
+            <p class="subtitle">Plateau de jeu multijoueur interactif</p>
+        </header>
+
+        <section class="quick-start">
+            <h2 class="quick-start-title">🚀 Démarrage Rapide</h2>
+            <div class="quick-steps">
+                <div class="step-item">
+                    <div class="button-group">
+                        <a href="game.html" class="action-button primary host-btn">
+                            <div class="btn-icon">🖥️</div>
+                            <div class="btn-text">
+                                <span class="btn-title">Hôte du jeu</span>
+                                <span class="btn-subtitle">Créer et héberger une partie</span>
+                            </div>
+                            <div class="btn-arrow">→</div>
+                        </a>
+                        <a href="controller.html" class="action-button secondary controller-btn">
+                            <div class="btn-icon">📱</div>
+                            <div class="btn-text">
+                                <span class="btn-title">Manette mobile</span>
+                                <span class="btn-subtitle">Rejoindre avec votre téléphone</span>
+                            </div>
+                            <div class="btn-arrow">→</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Ouvrez http://localhost:8080 dans votre navigateur</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎮</div>
+                <h3 class="feature-title">Plateau Interactif</h3>
+                <p class="feature-description">48 territoires uniques avec des mécaniques de jeu innovantes, des ressources à gérer et une infection qui se propage.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">Multi-plateforme</h3>
+                <p class="feature-description">Jouez sur PC, tablette, téléphone ou Smart TV. Interface responsive et optimisée pour tous les écrans.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Multijoueur Local</h3>
+                <p class="feature-description">Serveur WiFi local pour des parties sans connexion internet. Jusqu'à 8 joueurs simultanés.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3 class="feature-title">Interface Magnifique</h3>
+                <p class="feature-description">Design moderne avec effets glassmorphism, animations fluides et support tactile optimisé.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎲</div>
+                <h3 class="feature-title">Mécaniques Complètes</h3>
+                <p class="feature-description">Lancer de dés, système de tours, objectifs personnels, gestion de l'infection et conditions de victoire variées.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <h3 class="feature-title">Personnalisable</h3>
+                <p class="feature-description">Créez vos propres plateaux de jeu avec l'éditeur intégré. Sauvegardez et partagez vos créations.</p>
+            </div>
+        </section>
+
+        <section class="actions">
+            <div class="action-card primary" onclick="window.location.href='game.html'">
+                <div class="action-icon">🎮</div>
+                <h3 class="action-title">Jouer</h3>
+                <p class="action-description">Lancer une partie solo ou multijoueur</p>
+            </div>
+            <div class="action-card secondary" onclick="window.location.href='board-creator.html'">
+                <div class="action-icon">🛠️</div>
+                <h3 class="action-title">Créateur</h3>
+                <p class="action-description">Concevoir un plateau personnalisé</p>
+            </div>
+            <div class="action-card success" onclick="window.location.href='README.md'">
+                <div class="action-icon">📖</div>
+                <h3 class="action-title">Guide</h3>
+                <p class="action-description">Documentation complète</p>
+            </div>
+        </section>
+
+        <section class="requirements">
+            <h2 class="requirements-title">📋 Configuration Requise</h2>
+            <div class="requirements-grid">
+                <div class="requirement-item">
+                    <div class="requirement-icon">💻</div>
+                    <div class="requirement-text">Node.js 14.0+</div>
+                </div>
+                <div class="requirement-item">
+                    <div class="requirement-icon">🌐</div>
+                    <div class="requirement-text">WiFi local</div>
+                </div>
+                <div class="requirement-item">
+                    <div class="requirement-icon">📱</div>
+                    <div class="requirement-text">Navigateur moderne</div>
+                </div>
+                <div class="requirement-item">
+                    <div class="requirement-icon">📊</div>
+                    <div class="requirement-text">2GB RAM minimum</div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="README.md" class="footer-link">Documentation</a>
+                <a href="#" class="footer-link">Support</a>
+                <a href="#" class="footer-link">GitHub</a>
+                <a href="#" class="footer-link">Discord</a>
+            </div>
+            <p>&copy; 2024 Z-SURVIVAL Team. Tous droits réservés.</p>
+        </footer>
+    </div>
+
+    <!-- Railway Multiplayer -->
+    <script src="../components/railway-client.js"></script>
+    <script>
+        // Test automatique de la connexion Railway
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Test de connexion Railway...');
+            
+            // Récupérer les infos de partie
+            const gameCode = localStorage.getItem('zsurvival_gamecode');
+            const pseudo = localStorage.getItem('zsurvival_pseudo');
+            
+            if (!gameCode || !pseudo) {
+                console.error('❌ Infos de partie manquantes');
+                window.location.href = '../accueil.html';
+                return;
+            }
+            
+            // Initialiser Railway
+            setTimeout(async () => {
+                try {
+                    const railwayClient = new window.RailwayClient();
+                    const connected = await railwayClient.testConnection();
+                    
+                    console.log('✅ Connexion Railway:', connected);
+                    
+                    // Afficher le statut
+                    const statusDiv = document.createElement('div');
+                    statusDiv.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: ${connected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)'};
+                        border: 1px solid ${connected ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)'};
+                        color: ${connected ? '#4CAF50' : '#ff9800'};
+                        padding: 15px;
+                        border-radius: 10px;
+                        font-family: 'Orbitron', monospace;
+                        font-size: 12px;
+                        z-index: 9999;
+                        backdrop-filter: blur(10px);
+                    `;
+                    statusDiv.innerHTML = `
+                        <div>🚀 Railway: ${connected ? 'Connecté' : 'Local'}</div>
+                        <div>🎮 Partie: ${gameCode}</div>
+                        <div>👤 Hôte: ${pseudo}</div>
+                        <div>📱 Joueurs: <span id="playerCount">1</span>/8</div>
+                    `;
+                    document.body.appendChild(statusDiv);
+                    
+                    // Écouter les joueurs
+                    railwayClient.listenForPlayers(gameCode, (players) => {
+                        const countElement = document.getElementById('playerCount');
+                        if (countElement) {
+                            countElement.textContent = players.length;
+                        }
+                    });
+                    
+                    // Masquer après 5 secondes
+                    setTimeout(() => {
+                        statusDiv.style.opacity = '0';
+                        setTimeout(() => statusDiv.remove(), 1000);
+                    }, 5000);
+                    
+                } catch (error) {
+                    console.error('❌ Erreur Railway:', error);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

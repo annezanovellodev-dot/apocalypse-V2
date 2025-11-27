@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Z-SURVIVAL - Manette Mobile Railway</title>
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Railway Client -->
+    <script src="../components/railway-client.js"></script>
+    <script src="game/security-system.js"></script>
+    <script src="game/security-admin-panel.js"></script>
+    <script src="game/security-headers.js"></script>
+    <script src="game/security-testing.js"></script>
+</head>
+<body>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0a0a0f;
+            --secondary: #1a1a2e;
+            --accent: #16213e;
+            --highlight: #e94560;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --danger: #ff4757;
+            --info: #3498db;
+            --text: #ffffff;
+            --text-muted: #a8a8a8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(52, 152, 219, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(233, 69, 96, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(46, 213, 115, 0.05) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        /* Connection Screen */
+        .connection-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+
+        .connection-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .connection-container {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.3),
+                0 0 100px rgba(52, 152, 219, 0.1),
+                inset 0 0 30px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connection-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(52, 152, 219, 0.03), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .connection-logo {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(45deg, var(--info), #5dade2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        .connection-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, var(--info));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .connection-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        .code-input-container {
+            margin: 2rem 0;
+        }
+
+        .pseudo-input-container {
+            margin: 1.5rem 0;
+        }
+
+        .pseudo-input {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .pseudo-input:focus {
+            border-color: var(--highlight);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.4);
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2), rgba(255, 107, 129, 0.1));
+            transform: translateY(-2px);
+        }
+
+        .pseudo-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .code-input-container {
+            margin: 2rem 0;
+        }
+
+        .code-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--info);
+            text-align: center;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .code-input:focus {
+            border-color: var(--info);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .connect-button {
+            margin-top: 2rem;
+            padding: 1.2rem 2.5rem;
+            background: linear-gradient(45deg, var(--info), #5dade2);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 15px 40px rgba(52, 152, 219, 0.4);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .connect-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .connect-button:hover::before {
+            left: 100%;
+        }
+
+        .connect-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 50px rgba(52, 152, 219, 0.6);
+        }
+
+        .connect-button:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Game Lobby */
+        .game-lobby {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: none;
+            flex-direction: column;
+            z-index: 900;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .game-lobby.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lobby-header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .lobby-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, var(--info));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .lobby-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .lobby-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .host-section {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .host-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--highlight), #ff6b81);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+            animation: hostPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes hostPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 15px 40px rgba(233, 69, 96, 0.6); }
+        }
+
+        .host-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .host-status {
+            display: inline-block;
+            background: rgba(46, 213, 115, 0.2);
+            color: var(--success);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            border: 1px solid rgba(46, 213, 115, 0.3);
+        }
+
+        .players-section {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+            border-color: rgba(52, 152, 219, 0.3);
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--info), #5dade2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+        }
+
+        .player-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .player-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .game-status {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .status-message {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--warning);
+            margin-bottom: 1rem;
+        }
+
+        .waiting-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+        }
+
+        .waiting-dots {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--info);
+            animation: dotPulse 1.5s ease-in-out infinite;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Controller Interface */
+        .controller-interface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: none;
+            flex-direction: column;
+            z-index: 800;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .controller-interface.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .controller-header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--info), #5dade2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .player-details {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .player-name-small {
+            font-weight: 600;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .player-role {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .turn-indicator {
+            background: rgba(46, 213, 115, 0.2);
+            color: var(--success);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            border: 1px solid rgba(46, 213, 115, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .turn-indicator.waiting {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--warning);
+            border-color: rgba(255, 165, 2, 0.3);
+        }
+
+        .controller-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .mini-board {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+        }
+
+        .mini-board-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .mini-board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 8/6;
+        }
+
+        .mini-territory {
+            background: rgba(255, 255, 255, 0.05);
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(52, 152, 219, 0.2);
+            border-color: rgba(52, 152, 219, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .action-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .action-btn i {
+            font-size: 1.5rem;
+            color: var(--info);
+        }
+
+        .action-btn span {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .dice-section {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .die {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .die:hover {
+            background: rgba(52, 152, 219, 0.3);
+            border-color: var(--info);
+            transform: scale(1.1);
+        }
+
+        .die.rolling {
+            animation: dieRoll 0.5s ease-in-out;
+        }
+
+        @keyframes dieRoll {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .chat-section {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+        }
+
+        .chat-messages {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .chat-message {
+            margin-bottom: 0.5rem;
+            word-wrap: break-word;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .chat-send {
+            padding: 0.8rem 1.2rem;
+            background: var(--info);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chat-send:hover {
+            background: #5dade2;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .connection-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .connection-title {
+                font-size: 2rem;
+            }
+
+            .players-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .dice-container {
+                gap: 0.5rem;
+            }
+
+            .die {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .connection-title {
+                font-size: 1.5rem;
+            }
+
+            .lobby-title {
+                font-size: 1.5rem;
+            }
+
+            .players-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--info);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Screen -->
+    <div class="connection-screen" id="connectionScreen">
+        <div class="connection-container">
+            <div class="connection-logo">📱</div>
+            <h1 class="connection-title">Manette Mobile</h1>
+            <p class="connection-subtitle">Rejoignez une partie Z-SURVIVAL</p>
+            
+            <div class="pseudo-input-container">
+                <input type="text" class="pseudo-input" id="pseudoInput" placeholder="VOTRE PSEUDO" maxlength="15">
+            </div>
+            
+            <div class="code-input-container">
+                <input type="text" class="code-input" id="codeInput" placeholder="CODE DE 6 LETTRES" maxlength="6">
+            </div>
+            
+            <button class="connect-button" id="connectBtn" onclick="connectToGame()">
+                <i class="fas fa-gamepad"></i> Se connecter
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Lobby -->
+    <div class="game-lobby" id="gameLobby">
+        <header class="lobby-header">
+            <h1 class="lobby-title">🎮 Salon de jeu</h1>
+            <p class="lobby-subtitle">En attente du début de la partie...</p>
+        </header>
+
+        <main class="lobby-content">
+            <section class="host-section">
+                <div class="host-avatar">🖥️</div>
+                <div class="host-name" id="hostName">Hôte du jeu</div>
+                <div class="host-status">🟢 En ligne</div>
+            </section>
+
+            <section class="players-section">
+                <h2 class="section-title">👥 Joueurs connectés</h2>
+                <div class="players-grid" id="playersGrid">
+                    <!-- Players will be added here -->
+                </div>
+            </section>
+
+            <section class="game-status">
+                <div class="status-message">⏳ En attente des joueurs...</div>
+                <div class="waiting-indicator">
+                    <span>La partie commence bientôt</span>
+                    <div class="waiting-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Controller Interface -->
+    <div class="controller-interface" id="controllerInterface">
+        <header class="controller-header">
+            <div class="player-info">
+                <div class="player-avatar-small" id="playerAvatar">📱</div>
+                <div class="player-details">
+                    <div class="player-name-small" id="playerName">Manette</div>
+                    <div class="player-role">Joueur Mobile</div>
+                </div>
+            </div>
+            <div class="turn-indicator waiting" id="turnIndicator">
+                <i class="fas fa-clock"></i>
+                <span>En attente</span>
+            </div>
+        </header>
+
+        <main class="controller-content">
+            <section class="mini-board">
+                <h3 class="mini-board-title">🗺️ Plateau de jeu</h3>
+                <div class="mini-board-grid" id="miniBoard">
+                    <!-- Mini territories will be generated here -->
+                </div>
+            </section>
+
+            <section class="action-buttons">
+                <button class="action-btn" onclick="performAction('move')">
+                    <i class="fas fa-arrows-alt"></i>
+                    <span>Déplacer</span>
+                </button>
+                <button class="action-btn" onclick="performAction('attack')">
+                    <i class="fas fa-crosshairs"></i>
+                    <span>Attaquer</span>
+                </button>
+                <button class="action-btn" onclick="performAction('collect')">
+                    <i class="fas fa-hand-rock"></i>
+                    <span>Récolter</span>
+                </button>
+                <button class="action-btn" onclick="performAction('endturn')">
+                    <i class="fas fa-forward"></i>
+                    <span>Fin tour</span>
+                </button>
+            </section>
+
+            <section class="dice-section">
+                <h3 class="mini-board-title">🎲 Lancer les dés</h3>
+                <div class="dice-container">
+                    <div class="die" id="die1" onclick="rollDie(1)">1</div>
+                    <div class="die" id="die2" onclick="rollDie(2)">1</div>
+                    <div class="die" id="die3" onclick="rollDie(3)">1</div>
+                </div>
+            </section>
+
+            <section class="chat-section">
+                <h3 class="mini-board-title">💬 Chat</h3>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message"><strong>Système:</strong> Bienvenue dans la partie!</div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Message..." maxlength="50">
+                    <button class="chat-send" onclick="sendChat()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        class GameController {
+            constructor() {
+                this.gameId = null;
+                this.controllerId = null;
+                this.playerName = null;
+                this.playerColor = null;
+                this.isConnected = false;
+                this.isMyTurn = false;
+                this.gameState = 'connection';
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.generateMiniBoard();
+                
+                // Auto-focus code input
+                document.getElementById('codeInput').focus();
+            }
+
+            setupEventListeners() {
+                // Code input
+                const codeInput = document.getElementById('codeInput');
+                codeInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+
+                codeInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.connectToGame();
+                    }
+                });
+
+                // Chat input
+                const chatInput = document.getElementById('chatInput');
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendChat();
+                    }
+                });
+            }
+
+            connectToGame() {
+                const pseudoInput = document.getElementById('pseudoInput');
+                const codeInput = document.getElementById('codeInput');
+                
+                const pseudo = pseudoInput.value.trim();
+                const code = codeInput.value.trim().toUpperCase();
+                
+                if (pseudo.length < 2) {
+                    this.showError('Le pseudo doit contenir au moins 2 caractères');
+                    return;
+                }
+                
+                if (code.length !== 6) {
+                    this.showError('Le code doit contenir 6 lettres');
+                    return;
+                }
+
+                this.playerName = pseudo;
+                this.gameId = code;
+                this.connectToWebSocket();
+            }
+
+            connectToWebSocket() {
+                // Show loading
+                this.showLoading();
+                
+                // Disable connect button
+                const connectBtn = document.getElementById('connectBtn');
+                connectBtn.disabled = true;
+                connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+
+                try {
+                    // Connexion au vrai serveur WebSocket
+                    const wsUrl = this.getWebSocketUrl();
+                    console.log(`Connexion à: ${wsUrl}`);
+                    
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        console.log('Connecté au serveur WebSocket TITANESQUE');
+                        
+                        // Envoyer le message de connexion avec pseudo
+                        this.controllerId = this.generateControllerId();
+                        this.playerColor = this.getRandomColor();
+                        this.isConnected = true;
+                        
+                        this.ws.send(JSON.stringify({
+                            type: 'controllerConnect',
+                            gameId: this.gameId,
+                            controllerId: this.controllerId,
+                            playerName: this.playerName,
+                            playerColor: this.playerColor,
+                            pseudo: this.playerName,
+                            timestamp: Date.now()
+                        }));
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        this.handleServerMessage(data);
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('Déconnecté du serveur WebSocket');
+                        this.showError('Connexion perdue');
+                        this.resetConnection();
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('Erreur WebSocket:', error);
+                        this.showError('Erreur de connexion');
+                        this.resetConnection();
+                    };
+                    
+                } catch (error) {
+                    console.error('Erreur de connexion WebSocket:', error);
+                    this.showError('Erreur de connexion');
+                    this.resetConnection();
+                }
+            }
+
+            showLobby() {
+                // Hide connection screen
+                document.getElementById('connectionScreen').classList.add('hidden');
+                
+                // Show lobby
+                document.getElementById('gameLobby').classList.add('active');
+                
+                // Add this player to lobby
+                this.addPlayerToLobby(this.playerName, this.playerColor);
+                
+                // Add chat message
+                this.addChatMessage('Système', '🎮 Connecté au salon de jeu!');
+                this.addChatMessage('Système', '🖥️ Lôte de la partie: Ordinateur Principal');
+            }
+
+            addPlayerToLobby(name, color) {
+                const playersGrid = document.getElementById('playersGrid');
+                
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <div class="player-avatar" style="background: ${color};">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="player-name">${name}</div>
+                    <div class="player-status">🟢 Connecté</div>
+                `;
+                
+                playersGrid.appendChild(playerCard);
+                
+                // Add chat message
+                this.addChatMessage('Système', `👋 ${name} a rejoint la partie!`);
+            }
+
+            startGame() {
+                // Show loading
+                this.showLoading();
+                
+                setTimeout(() => {
+                    // Hide lobby
+                    document.getElementById('gameLobby').classList.remove('active');
+                    
+                    // Show controller interface
+                    document.getElementById('controllerInterface').classList.add('active');
+                    
+                    // Hide loading
+                    this.hideLoading();
+                    
+                    // Add chat message
+                    this.addChatMessage('Système', '🎮 La partie commence!');
+                    
+                    // Set turn
+                    this.isMyTurn = true;
+                    this.updateTurnIndicator();
+                }, 2000);
+            }
+
+            generateMiniBoard() {
+                const miniBoard = document.getElementById('miniBoard');
+                miniBoard.innerHTML = '';
+                
+                for (let i = 0; i < 48; i++) {
+                    const territory = document.createElement('div');
+                    territory.className = 'mini-territory';
+                    territory.textContent = i + 1;
+                    miniBoard.appendChild(territory);
+                }
+            }
+
+            performAction(action) {
+                if (!this.isMyTurn) {
+                    this.addChatMessage('Système', '⏳ Ce n\'est pas votre tour!');
+                    return;
+                }
+
+                // Envoyer l'action au serveur
+                this.sendToServer({
+                    type: 'controllerAction',
+                    action: action,
+                    data: {
+                        controllerId: this.controllerId,
+                        timestamp: Date.now()
+                    }
+                });
+
+                let actionMessage = '';
+                switch(action) {
+                    case 'move':
+                        actionMessage = '🚶 Déplacement en cours...';
+                        break;
+                    case 'attack':
+                        actionMessage = '⚔️ Attaque lancée!';
+                        break;
+                    case 'collect':
+                        actionMessage = '📦 Récolte en cours...';
+                        break;
+                    case 'endturn':
+                        actionMessage = '✅ Tour terminé';
+                        this.isMyTurn = false;
+                        this.updateTurnIndicator();
+                        break;
+                }
+
+                this.addChatMessage(this.playerName, actionMessage);
+                
+                // Simulate action
+                this.vibrate();
+            }
+
+            rollDie(dieNumber) {
+                if (!this.isMyTurn) {
+                    this.addChatMessage('Système', '⏳ Ce n\'est pas votre tour!');
+                    return;
+                }
+
+                const die = document.getElementById(`die${dieNumber}`);
+                die.classList.add('rolling');
+                
+                setTimeout(() => {
+                    const result = Math.floor(Math.random() * 6) + 1;
+                    die.textContent = result;
+                    die.classList.remove('rolling');
+                    
+                    // Envoyer le résultat au serveur
+                    this.sendToServer({
+                        type: 'controllerAction',
+                        action: 'rollDie',
+                        data: {
+                            dieNumber: dieNumber,
+                            result: result,
+                            controllerId: this.controllerId,
+                            timestamp: Date.now()
+                        }
+                    });
+                    
+                    this.addChatMessage(this.playerName, `🎲 Dé ${dieNumber}: ${result}`);
+                    this.vibrate();
+                }, 500);
+            }
+
+            sendChat() {
+                const chatInput = document.getElementById('chatInput');
+                const message = chatInput.value.trim();
+                
+                if (!message) return;
+                
+                // Envoyer le message au serveur
+                this.sendToServer({
+                    type: 'chat',
+                    message: message,
+                    sender: this.playerName,
+                    timestamp: Date.now()
+                });
+                
+                chatInput.value = '';
+                this.vibrate();
+            }
+
+            addChatMessage(sender, message) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Limit messages
+                while (chatMessages.children.length > 20) {
+                    chatMessages.removeChild(chatMessages.firstChild);
+                }
+            }
+
+            updateTurnIndicator() {
+                const indicator = document.getElementById('turnIndicator');
+                if (this.isMyTurn) {
+                    indicator.className = 'turn-indicator';
+                    indicator.innerHTML = '<i class="fas fa-play"></i><span>Votre tour!</span>';
+                } else {
+                    indicator.className = 'turn-indicator waiting';
+                    indicator.innerHTML = '<i class="fas fa-clock"></i><span>En attente</span>';
+                }
+            }
+
+            generateControllerId() {
+                return 'controller_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            getRandomColor() {
+                const colors = [
+                    'linear-gradient(45deg, #3498db, #5dade2)',
+                    'linear-gradient(45deg, #e74c3c, #ff6b81)',
+                    'linear-gradient(45deg, #2ecc71, #58d68d)',
+                    'linear-gradient(45deg, #f39c12, #ffa502)',
+                    'linear-gradient(45deg, #9b59b6, #bb8fce)'
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            showLoading() {
+                document.getElementById('loadingOverlay').classList.add('active');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+
+            showError(message) {
+                this.addChatMessage('Erreur', message);
+            }
+
+            vibrate() {
+                if (navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+            }
+
+            getWebSocketUrl() {
+                // Déterminer l'URL WebSocket en fonction de l'environnement
+                const isLocalhost = window.location.hostname === 'localhost' || 
+                                  window.location.hostname === '127.0.0.1';
+                
+                if (isLocalhost) {
+                    return `ws://localhost:8081`;
+                } else {
+                    // En production, utiliser le serveur Heroku
+                    return `wss://zsurvival-server.herokuapp.com/ws`;
+                }
+            }
+
+            handleServerMessage(data) {
+                console.log('Message reçu:', data);
+                
+                switch (data.type) {
+                    case 'connected':
+                        console.log('Connecté au serveur:', data.message);
+                        break;
+                        
+                    case 'controllerRegistered':
+                        console.log('Contrôleur enregistré:', data.gameId);
+                        this.updatePlayerInfo();
+                        this.showLobby();
+                        this.hideLoading();
+                        break;
+                        
+                    case 'playerJoined':
+                        this.addPlayerToLobby(data.player.name, data.player.color);
+                        break;
+                        
+                    case 'playerLeft':
+                        this.removePlayerFromLobby(data.playerId);
+                        break;
+                        
+                    case 'gameStarted':
+                        this.startGame();
+                        break;
+                        
+                    case 'chat':
+                        this.addChatMessage(data.sender, data.message);
+                        break;
+                        
+                    case 'playerAction':
+                        this.handlePlayerAction(data.playerId, data.action, data.data);
+                        break;
+                        
+                    case 'error':
+                        this.showError(data.message);
+                        break;
+                        
+                    case 'gameEnded':
+                        this.showGameEnded(data.message);
+                        break;
+                        
+                    default:
+                        console.log('Type de message inconnu:', data.type);
+                }
+            }
+
+            updatePlayerInfo() {
+                document.getElementById('playerName').textContent = this.playerName;
+                document.getElementById('playerAvatar').style.background = this.playerColor;
+            }
+
+            removePlayerFromLobby(playerId) {
+                const playersGrid = document.getElementById('playersGrid');
+                const players = playersGrid.children;
+                
+                for (let i = 0; i < players.length; i++) {
+                    const playerCard = players[i];
+                    const playerName = playerCard.querySelector('.player-name');
+                    if (playerName && playerName.textContent.includes(playerId)) {
+                        playersGrid.removeChild(playerCard);
+                        break;
+                    }
+                }
+            }
+
+            handlePlayerAction(playerId, action, data) {
+                // Gérer les actions des autres joueurs
+                console.log(`Action reçue de ${playerId}: ${action}`, data);
+            }
+
+            showGameEnded(message) {
+                // Afficher un message de fin de partie
+                this.addChatMessage('Système', message);
+                
+                // Revenir à l'écran de connexion après 3 secondes
+                setTimeout(() => {
+                    this.resetToConnection();
+                }, 3000);
+            }
+
+            resetToConnection() {
+                // Masquer tous les écrans
+                document.getElementById('gameLobby').classList.remove('active');
+                document.getElementById('controllerInterface').classList.remove('active');
+                
+                // Afficher l'écran de connexion
+                document.getElementById('connectionScreen').classList.remove('hidden');
+                
+                // Réinitialiser l'état
+                this.isConnected = false;
+                this.isMyTurn = false;
+                this.gameState = 'connection';
+                
+                // Réinitialiser les champs
+                document.getElementById('codeInput').value = '';
+                this.resetConnectButton();
+            }
+
+            resetConnectButton() {
+                const connectBtn = document.getElementById('connectBtn');
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<i class="fas fa-gamepad"></i> Rejoindre la partie';
+            }
+
+            resetConnection() {
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+                
+                this.resetConnectButton();
+                this.hideLoading();
+            }
+
+            sendToServer(data) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(data));
+                } else {
+                    console.error('WebSocket non connecté');
+                }
+            }
+        }
+
+        // Global functions
+        function connectToGame() {
+            gameController.connectToGame();
+        }
+
+        function performAction(action) {
+            gameController.performAction(action);
+        }
+
+        function rollDie(dieNumber) {
+            gameController.rollDie(dieNumber);
+        }
+
+        function sendChat() {
+            gameController.sendChat();
+        }
+
+        // Vérifier le pseudo au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            const pseudo = localStorage.getItem('zsurvival_pseudo');
+            const role = localStorage.getItem('zsurvival_role');
+            
+            if (!pseudo) {
+                // Rediriger vers l'accueil si pas de pseudo
+                alert('Tu dois entrer un pseudo d\'abord !');
+                window.location.href = 'accueil.html';
+                return;
+            }
+            
+            console.log('🎮 Controller prêt pour', pseudo);
+        });
+
+        // Initialize game controller
+        const gameController = new GameController();
+
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('Controller paused');
+            } else {
+                console.log('Controller resumed');
+            }
+        });
+
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+
+    <!-- Railway Client -->
+    <script src="../components/railway-client.js"></script>
+    <script>
+        // Test automatique de la connexion Railway
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Test de connexion Railway (Controller)...');
+            
+            // Récupérer les infos de partie
+            const gameCode = localStorage.getItem('zsurvival_gamecode');
+            const pseudo = localStorage.getItem('zsurvival_pseudo');
+            const role = localStorage.getItem('zsurvival_role');
+            
+            if (!gameCode || !pseudo || role !== 'player') {
+                console.error('❌ Infos de partie manquantes ou mauvais rôle');
+                window.location.href = '../accueil.html';
+                return;
+            }
+            
+            // Initialiser Railway
+            setTimeout(async () => {
+                try {
+                    const railwayClient = new window.RailwayClient();
+                    const connected = await railwayClient.testConnection();
+                    
+                    console.log('✅ Connexion Railway Controller:', connected);
+                    
+                    // Afficher le statut
+                    const statusDiv = document.createElement('div');
+                    statusDiv.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        left: 20px;
+                        background: ${connected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)'};
+                        border: 1px solid ${connected ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)'};
+                        color: ${connected ? '#4CAF50' : '#ff9800'};
+                        padding: 10px;
+                        border-radius: 10px;
+                        font-family: 'Orbitron', monospace;
+                        font-size: 12px;
+                        z-index: 9999;
+                        backdrop-filter: blur(10px);
+                    `;
+                    statusDiv.innerHTML = `
+                        <div>🚀 Railway: ${connected ? 'Connecté' : 'Local'}</div>
+                        <div>🎮 Partie: ${gameCode}</div>
+                        <div>👤 Joueur: ${pseudo}</div>
+                        <div>📱 Mode: Contrôleur</div>
+                    `;
+                    document.body.appendChild(statusDiv);
+                    
+                    // Masquer après 3 secondes
+                    setTimeout(() => {
+                        statusDiv.style.opacity = '0';
+                        setTimeout(() => statusDiv.remove(), 1000);
+                    }, 3000);
+                    
+                    // Rejoindre automatiquement la partie
+                    if (connected) {
+                        const result = await railwayClient.joinGame(gameCode, pseudo);
+                        if (result.success) {
+                            console.log('✅ Rejoint la partie avec succès');
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erreur Railway Controller:', error);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

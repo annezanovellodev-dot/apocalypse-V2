@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-SURVIVAL - Accueil</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Railway Client -->
+    <script src="components/railway-client.js"></script>
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .accueil-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(45deg, #e94560, #ff6b6b, #feca57);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a8a8a8;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: #f1f1f1;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #f1f1f1;
+            font-size: 1.1rem;
+            font-family: 'Rajdhani', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #e94560;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: #a8a8a8;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 25px;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            border: none;
+            border-radius: 10px;
+            color: #f1f1f1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+            background: linear-gradient(45deg, #ff6b6b, #e94560);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #16213e, #1a1a2e);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            border-color: #e94560;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-success {
+            background: rgba(46, 213, 115, 0.2);
+            border: 2px solid rgba(46, 213, 115, 0.5);
+            color: #2ed573;
+        }
+
+        .status-error {
+            background: rgba(255, 71, 87, 0.2);
+            border: 2px solid rgba(255, 71, 87, 0.5);
+            color: #ff4757;
+        }
+
+        .zombie-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .features {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #a8a8a8;
+        }
+
+        .feature-icon {
+            margin-right: 15px;
+            color: #e94560;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="accueil-container">
+        <div class="zombie-icon">🧟</div>
+        <h1 class="logo">Z-SURVIVAL</h1>
+        <p class="subtitle">Jeu multi-joueurs post-apocalyptique</p>
+
+        <form id="pseudoForm">
+            <div class="form-group">
+                <label class="form-label" for="pseudo">
+                    <i class="fas fa-user"></i> Ton pseudo
+                </label>
+                <input 
+                    type="text" 
+                    id="pseudo" 
+                    class="form-input" 
+                    placeholder="Entre ton pseudo de survivant..."
+                    maxlength="20"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn">
+                    <i class="fas fa-play"></i> HÔTE
+                </button>
+                <button type="button" class="btn btn-secondary" id="joinBtn">
+                    <i class="fas fa-gamepad"></i> JOUEUR
+                </button>
+            </div>
+        </form>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="features">
+            <div class="feature-item">
+                <i class="fas fa-wifi feature-icon"></i>
+                <span>Multi-joueurs temps réel</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-mobile-alt feature-icon"></i>
+                <span>Desktop + Mobile</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-shield-alt feature-icon"></i>
+                <span>Sécurité avancée</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sauvegarder le pseudo et rediriger
+        document.getElementById('pseudoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const pseudo = document.getElementById('pseudo').value.trim();
+            
+            if (!pseudo) {
+                showStatus('Entre un pseudo valide !', 'error');
+                return;
+            }
+
+            if (pseudo.length < 2) {
+                showStatus('Le pseudo doit avoir au moins 2 caractères !', 'error');
+                return;
+            }
+
+            // Sauvegarder le pseudo
+            localStorage.setItem('zsurvival_pseudo', pseudo);
+            localStorage.setItem('zsurvival_role', 'host');
+            
+            showStatus('Connexion en cours...', 'success');
+            
+            // Rediriger vers le jeu hôte
+            setTimeout(() => {
+                window.location.href = 'game.html';
+            }, 1000);
+        });
+
+        // Bouton JOUEUR
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            const pseudo = document.getElementById('pseudo').value.trim();
+            
+            if (!pseudo) {
+                showStatus('Entre un pseudo avant de rejoindre !', 'error');
+                return;
+            }
+
+            // Sauvegarder le pseudo
+            localStorage.setItem('zsurvival_pseudo', pseudo);
+            localStorage.setItem('zsurvival_role', 'player');
+            
+            showStatus('Redirection vers le jeu...', 'success');
+            
+            // Rediriger vers le contrôleur
+            setTimeout(() => {
+                window.location.href = 'controller.html';
+            }, 1000);
+        });
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message status-${type}`;
+            statusEl.style.display = 'block';
+            
+            if (type === 'error') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Charger le pseudo sauvegardé
+        window.addEventListener('load', () => {
+            const savedPseudo = localStorage.getItem('zsurvival_pseudo');
+            if (savedPseudo) {
+                document.getElementById('pseudo').value = savedPseudo;
+            }
+        });
+
+        // Animation d'entrée
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.accueil-container').style.animation = 'fadeIn 0.8s ease-out';
+            
+            // Initialiser Railway
+            initializeRailway();
+            
+            // Test connexion Railway après 2 secondes
+            setTimeout(() => {
+                testWebSocketConnection();
+            }, 2000);
+        });
+
+        // Initialiser Railway
+        function initializeRailway() {
+            try {
+                console.log('🚀 Initialisation Railway...');
+                
+                // Le client Railway s'initialise automatiquement
+                setTimeout(async () => {
+                    const railwayClient = new window.RailwayClient();
+                    const connected = await railwayClient.testConnection();
+                    
+                    if (connected) {
+                        console.log('🚀 Railway connecté !');
+                        showStatus('🚀 Serveur multi-joueurs Railway connecté !', 'success');
+                    } else {
+                        console.log('🏠 Mode local activé');
+                        showStatus('🏠 Mode local - Fallback automatique', 'success');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.log('❌ Erreur initialisation Railway:', error);
+                showStatus('⚠️ Mode solo uniquement', 'error');
+            }
+        }
+
+        // Test connexion au serveur Railway
+        function testWebSocketConnection() {
+            try {
+                // Test simple Railway
+                const railwayClient = new window.RailwayClient();
+                railwayClient.testConnection().then((connected) => {
+                    if (connected) {
+                        console.log('🚀 Railway connecté !');
+                        showStatus('🚀 Serveur multi-joueurs Railway connecté !', 'success');
+                    } else {
+                        console.log('🏠 Mode local activé');
+                        showStatus('🏠 Mode local - Fallback automatique', 'success');
+                    }
+                }).catch(() => {
+                    console.log('❌ Railway non disponible');
+                    showStatus('⚠️ Mode local - Fallback automatique', 'error');
+                });
+                
+            } catch (error) {
+                console.log('❌ Erreur Railway:', error);
+                showStatus('⚠️ Mode solo uniquement', 'error');
+            }
+        }
+
+        // Animation fadeIn
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Z-SURVIVAL - Hôte du jeu</title>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://zsurvival-server.herokuapp.com ws://localhost:8081; object-src 'none'; frame-ancestors 'none';">
+    
+    <!-- Anti-Caching for Security -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Security Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fingerprintjs2/2.1.0/fingerprint2.min.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Security System -->
+    <script src="security-system.js"></script>
+    <script src="security-admin-panel.js"></script>
+    <script src="security-headers.js"></script>
+    <script src="security-testing.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0a0a0f;
+            --secondary: #1a1a2e;
+            --accent: #16213e;
+            --highlight: #e94560;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --danger: #ff4757;
+            --info: #3498db;
+            --text: #ffffff;
+            --text-muted: #a8a8a8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(233, 69, 96, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(46, 213, 115, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(52, 152, 219, 0.05) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        /* Connection Screen */
+        .connection-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+
+        .connection-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .connection-container {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4rem;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.3),
+                0 0 100px rgba(233, 69, 96, 0.1),
+                inset 0 0 30px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connection-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(233, 69, 96, 0.03), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .connection-logo {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, var(--highlight), #ff6b81);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        .connection-title {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, var(--highlight));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .connection-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            opacity: 0.8;
+        }
+
+        .code-display {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(233, 69, 96, 0.1));
+            border: 2px solid var(--highlight);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: var(--highlight);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            font-weight: 700;
+            box-shadow: 
+                0 0 30px rgba(233, 69, 96, 0.3),
+                inset 0 0 20px rgba(233, 69, 96, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-display::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--highlight), #ff6b81, var(--highlight));
+            border-radius: 20px;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .share-section {
+            margin: 3rem 0;
+        }
+
+        .share-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .share-link-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .share-link {
+            background: transparent;
+            border: none;
+            color: var(--highlight);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            width: 100%;
+            text-align: center;
+            outline: none;
+            letter-spacing: 1px;
+        }
+
+        .copy-button {
+            background: linear-gradient(45deg, var(--highlight), #ff6b81);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .copy-button:hover::before {
+            left: 100%;
+        }
+
+        .copy-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(233, 69, 96, 0.6);
+        }
+
+        .copy-button:active {
+            transform: translateY(-1px);
+        }
+
+        .connection-status {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-text {
+            color: var(--warning);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .connected-controllers {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .controller-indicator {
+            background: rgba(46, 213, 115, 0.1);
+            border: 2px solid var(--success);
+            border-radius: 12px;
+            padding: 0.8rem 1.5rem;
+            color: var(--success);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: controllerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes controllerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .start-game-btn {
+            margin-top: 2rem;
+            padding: 1.2rem 3rem;
+            background: linear-gradient(45deg, var(--success), #58d68d);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 15px 40px rgba(46, 213, 115, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-game-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .start-game-btn:hover::before {
+            left: 100%;
+        }
+
+        .start-game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 50px rgba(46, 213, 115, 0.6);
+        }
+
+        .start-game-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Game Interface */
+        .game-interface {
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .game-interface.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .game-header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, var(--highlight));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-board {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 2px;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 8/6;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .territory {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .territory:hover {
+            background: rgba(233, 69, 96, 0.3);
+            border-color: var(--highlight);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .territory.selected {
+            background: rgba(46, 213, 115, 0.3);
+            border-color: var(--success);
+            box-shadow: 0 0 20px rgba(46, 213, 115, 0.5);
+        }
+
+        .territory.current-player {
+            background: rgba(52, 152, 219, 0.3);
+            border-color: var(--info);
+        }
+
+        .game-sidebar {
+            width: 300px;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .players-list {
+            margin-bottom: 2rem;
+        }
+
+        .player-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .player-item.active {
+            background: rgba(46, 213, 115, 0.1);
+            border: 1px solid var(--success);
+            box-shadow: 0 0 20px rgba(46, 213, 115, 0.3);
+        }
+
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .player-resources {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .chat-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .chat-messages {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .chat-message {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .chat-send {
+            padding: 0.5rem 1rem;
+            background: var(--highlight);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chat-send:hover {
+            background: #ff6b81;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .connection-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .connection-title {
+                font-size: 2rem;
+            }
+
+            .code-display {
+                font-size: 1.8rem;
+                letter-spacing: 4px;
+            }
+
+            .game-sidebar {
+                display: none;
+            }
+
+            .board-grid {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .connection-title {
+                font-size: 1.5rem;
+            }
+
+            .code-display {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+            }
+
+            .copy-button {
+                padding: 0.8rem 2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--highlight);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Screen -->
+    <div class="connection-screen" id="connectionScreen">
+        <div class="connection-container">
+            <div class="connection-logo">☣️</div>
+            <h1 class="connection-title">Z-SURVIVAL</h1>
+            <p class="connection-subtitle">Jouez depuis n'importe où, en 4G/5G/WiFi</p>
+            
+            <div class="code-display" id="connectionCode">
+                <!-- Code will be generated here -->
+            </div>
+            
+            <div class="share-section">
+                <h3 class="share-title">📱 Partagez ce lien aux joueurs</h3>
+                <div class="share-link-container">
+                    <input type="text" class="share-link" id="shareLinkInput" readonly>
+                </div>
+                <button class="copy-button" onclick="copyShareLink()">
+                    <i class="fas fa-copy"></i> Copier le lien
+                </button>
+            </div>
+            
+            <div class="connection-status">
+                <div class="status-text" id="statusText">En attente de joueurs...</div>
+                <div class="connected-controllers" id="connectedControllers">
+                    <!-- Connected controllers will appear here -->
+                </div>
+            </div>
+            
+            <button class="start-game-btn" id="startGameBtn" disabled>
+                <i class="fas fa-play"></i> Commencer la partie
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Interface -->
+    <div class="game-interface" id="gameInterface">
+        <header class="game-header">
+            <h1 class="game-title">☣️ Z-SURVIVAL</h1>
+            <div class="game-info">
+                <span id="turnIndicator">Tour: Joueur 1</span>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <div class="board-grid" id="boardGrid">
+                <!-- Territories will be generated here -->
+            </div>
+        </main>
+
+        <aside class="game-sidebar">
+            <div class="players-list" id="playersList">
+                <!-- Players will be listed here -->
+            </div>
+
+            <div class="chat-section">
+                <h3 style="margin-bottom: 1rem; font-family: 'Orbitron', sans-serif;">Chat</h3>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message">Bienvenue dans Z-SURVIVAL!</div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Message..." maxlength="100">
+                    <button class="chat-send" onclick="sendChat()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        class ZSurvivalGame {
+            constructor() {
+                this.connectionCode = this.generateConnectionCode();
+                this.shareLink = window.location.origin + '/controller.html?game=' + this.connectionCode;
+                this.connectedControllers = [];
+                this.gameState = 'waiting';
+                this.wsConnected = false;
+                this.currentPlayerIndex = 0;
+                this.territories = [];
+                this.hostPseudo = null;
+                this.ws = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.setupConnectionScreen();
+                this.generateBoard();
+                this.setupEventListeners();
+                this.setupWebSocket();
+                this.simulateDemoConnection();
+            }
+
+            setupWebSocket() {
+                // Connexion au vrai serveur WebSocket TITANESQUE
+                const wsUrl = this.getWebSocketUrl();
+                console.log(`Connexion hôte à: ${wsUrl}`);
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('Hôte connecté au serveur WebSocket TITANESQUE');
+                    this.wsConnected = true;
+                    
+                    // Envoyer le message d'hôte avec pseudo
+                    this.ws.send(JSON.stringify({
+                        type: 'host',
+                        gameId: this.connectionCode,
+                        pseudo: this.hostPseudo || 'Hôte Principal',
+                        hostName: this.hostPseudo || 'Hôte Principal',
+                        timestamp: Date.now()
+                    }));
+                };
+                
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleServerMessage(data);
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('Hôte déconnecté du serveur WebSocket');
+                    this.wsConnected = false;
+                    this.showError('Connexion perdue');
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('Erreur WebSocket hôte:', error);
+                    this.wsConnected = false;
+                    this.showError('Erreur de connexion');
+                };
+            }
+
+            generateConnectionCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            }
+
+            setupConnectionScreen() {
+                // Display connection code
+                document.getElementById('connectionCode').textContent = this.connectionCode;
+
+                // Generate share link
+                const shareLink = `${window.location.origin}/controller.html?code=${this.connectionCode}`;
+                document.getElementById('shareLinkInput').value = shareLink;
+
+                // Setup start game button
+                document.getElementById('startGameBtn').addEventListener('click', () => {
+                    this.startGame();
+                });
+            }
+
+            generateBoard() {
+                const boardGrid = document.getElementById('boardGrid');
+                boardGrid.innerHTML = '';
+                
+                for (let i = 0; i < 48; i++) {
+                    const territory = document.createElement('div');
+                    territory.className = 'territory';
+                    territory.dataset.index = i;
+                    territory.textContent = i + 1;
+                    
+                    territory.addEventListener('click', () => {
+                        this.selectTerritory(i);
+                    });
+                    
+                    boardGrid.appendChild(territory);
+                    this.territories.push({
+                        id: i,
+                        owner: null,
+                        type: 'normal'
+                    });
+                }
+            }
+
+            setupEventListeners() {
+                // Chat input
+                const chatInput = document.getElementById('chatInput');
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendChat();
+                    }
+                });
+            }
+
+            simulateDemoConnection() {
+                // Simulate a controller connection after 2 seconds for demo
+                setTimeout(() => {
+                    this.addController('Manette Demo', '#3498db');
+                }, 2000);
+            }
+
+            addController(name, color) {
+                const controller = {
+                    id: `controller_${this.connectedControllers.length}`,
+                    name: name,
+                    color: color,
+                    connected: true
+                };
+                
+                this.connectedControllers.push(controller);
+                this.updateConnectionDisplay();
+                
+                // Add as player
+                this.addPlayer(name, color);
+            }
+
+            addPlayer(name, color) {
+                const player = {
+                    id: `player_${this.players.length}`,
+                    name: name,
+                    color: color,
+                    resources: {
+                        food: 10,
+                        medicine: 5,
+                        materials: 8,
+                        ammo: 6
+                    }
+                };
+                
+                this.players.push(player);
+                this.updatePlayersList();
+            }
+
+            updateConnectionDisplay() {
+                const statusText = document.getElementById('statusText');
+                const controllersContainer = document.getElementById('connectedControllers');
+                const startBtn = document.getElementById('startGameBtn');
+                
+                if (this.connectedControllers.length === 0) {
+                    statusText.textContent = 'En attente de joueurs...';
+                    statusText.style.color = 'var(--warning)';
+                    startBtn.disabled = true;
+                } else {
+                    statusText.textContent = `${this.connectedControllers.length} joueur(s) connecté(s)`;
+                    statusText.style.color = 'var(--success)';
+                    startBtn.disabled = false;
+                }
+                
+                // Update controller indicators
+                controllersContainer.innerHTML = '';
+                this.connectedControllers.forEach(controller => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'controller-indicator';
+                    indicator.innerHTML = `<i class="fas fa-gamepad"></i> ${controller.name}`;
+                    indicator.style.borderColor = controller.color;
+                    indicator.style.color = controller.color;
+                    controllersContainer.appendChild(indicator);
+                });
+            }
+
+            updatePlayersList() {
+                const playersList = document.getElementById('playersList');
+                playersList.innerHTML = '';
+                
+                this.players.forEach((player, index) => {
+                    const playerItem = document.createElement('div');
+                    playerItem.className = 'player-item';
+                    if (index === this.currentPlayerIndex) {
+                        playerItem.classList.add('active');
+                    }
+                    
+                    playerItem.innerHTML = `
+                        <div class="player-avatar" style="background: ${player.color};">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">${player.name}</div>
+                            <div class="player-resources">
+                                🍖${player.resources.food} 💊${player.resources.medicine} 
+                                🔨${player.resources.materials} 🎯${player.resources.ammo}
+                            </div>
+                        </div>
+                    `;
+                    
+                    playersList.appendChild(playerItem);
+                });
+            }
+
+            selectTerritory(index) {
+                if (this.gameState !== 'playing') return;
+                
+                // Clear previous selection
+                document.querySelectorAll('.territory.selected').forEach(t => {
+                    t.classList.remove('selected');
+                });
+                
+                // Toggle selection
+                const territory = document.querySelector(`[data-index="${index}"]`);
+                if (territory) {
+                    territory.classList.add('selected');
+                }
+            }
+
+            startGame() {
+                if (!this.hostPseudo) {
+                    this.showError('Veuillez définir votre pseudo d\'hôte');
+                    return;
+                }
+                
+                // Show loading
+                this.showLoading();
+                
+                setTimeout(() => {
+                    // Hide connection screen
+                    document.getElementById('connectionScreen').classList.add('hidden');
+                    
+                    // Show game interface
+                    document.getElementById('gameInterface').classList.add('active');
+                    
+                    // Start game
+                    this.gameState = 'playing';
+                    this.assignStartingTerritories();
+                    this.startGameLoop();
+                    
+                    // Hide loading
+                    this.hideLoading();
+                    
+                    // Add chat message
+                    this.addChatMessage('Système', '🎮 La partie commence!');
+                }, 1500);
+            }
+
+            assignStartingTerritories() {
+                // Assign random territories to each player
+                this.players.forEach((player, index) => {
+                    const territoryIndex = Math.floor(Math.random() * 48);
+                    this.territories[territoryIndex].owner = player.id;
+                    
+                    // Update visual
+                    const territory = document.querySelector(`[data-index="${territoryIndex}"]`);
+                    if (territory) {
+                        territory.style.background = player.color + '33';
+                        territory.style.borderColor = player.color;
+                    }
+                });
+            }
+
+            startGameLoop() {
+                // Update turn indicator
+                this.updateTurnIndicator();
+                
+                // Add some demo actions
+                setTimeout(() => {
+                    this.addChatMessage('Système', '🎯 Cliquez sur les territoires pour jouer!');
+                }, 2000);
+            }
+
+            updateTurnIndicator() {
+                const currentPlayer = this.players[this.currentPlayerIndex];
+                if (currentPlayer) {
+                    document.getElementById('turnIndicator').textContent = `Tour: ${currentPlayer.name}`;
+                    this.updatePlayersList();
+                }
+            }
+
+            sendChat() {
+                const chatInput = document.getElementById('chatInput');
+                const message = chatInput.value.trim();
+                
+                if (!message) return;
+                
+                // Envoyer le message via WebSocket
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'chat',
+                        message: message,
+                        sender: this.hostPseudo || 'Hôte',
+                        timestamp: Date.now()
+                    }));
+                } else {
+                    // Fallback: ajouter localement
+                    this.addChatMessage(this.hostPseudo || 'Hôte', message);
+                }
+                
+                chatInput.value = '';
+            }
+
+            addChatMessage(sender, message) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Limit messages
+                while (chatMessages.children.length > 20) {
+                    chatMessages.removeChild(chatMessages.firstChild);
+                }
+            }
+
+            showLoading() {
+                document.getElementById('loadingOverlay').classList.add('active');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+
+            showError(message) {
+                alert(message);
+            }
+
+            getWebSocketUrl() {
+                // Déterminer l'URL WebSocket en fonction de l'environnement
+                const isLocalhost = window.location.hostname === 'localhost' || 
+                                  window.location.hostname === '127.0.0.1';
+                
+                if (isLocalhost) {
+                    return `ws://localhost:8081`;
+                } else {
+                    // En production, utiliser le serveur Heroku
+                    return `wss://zsurvival-server.herokuapp.com/ws`;
+                }
+            }
+
+            handleServerMessage(data) {
+                console.log('Message reçu par hôte:', data);
+                
+                switch (data.type) {
+                    case 'connected':
+                        console.log('Connecté au serveur:', data.message);
+                        break;
+                        
+                    case 'hostRegistered':
+                        console.log('Hôte enregistré:', data.gameId);
+                        this.updateHostStatus();
+                        break;
+                        
+                    case 'controllerConnected':
+                        this.addController(data.controller.pseudo, data.controller.color);
+                        break;
+                        
+                    case 'controllerDisconnected':
+                        this.removeController(data.controllerId);
+                        break;
+                        
+                    case 'chat':
+                        this.addChatMessage(data.sender, data.message);
+                        break;
+                        
+                    case 'controllerAction':
+                        this.handleControllerAction(data.controllerId, data.action, data.data);
+                        break;
+                        
+                    case 'error':
+                        this.showError(data.message);
+                        break;
+                        
+                    default:
+                        console.log('Type de message inconnu:', data.type);
+                }
+            }
+
+            updateHostStatus() {
+                const statusText = document.getElementById('pseudoStatus');
+                if (statusText) {
+                    statusText.innerHTML = `<span style="color: var(--success);">👑 ${this.hostPseudo} est l'hôte!</span>`;
+                }
+            }
+
+            removeController(controllerId) {
+                this.connectedControllers = this.connectedControllers.filter(c => c.id !== controllerId);
+                this.updateConnectionDisplay();
+                
+                // Retirer le joueur
+                this.players = this.players.filter(p => p.id !== controllerId);
+                this.updatePlayersList();
+            }
+
+            handleControllerAction(controllerId, action, data) {
+                console.log(`Action reçue du contrôleur ${controllerId}: ${action}`, data);
+                
+                // Ici vous pouvez gérer les actions des contrôleurs
+                switch (action) {
+                    case 'move':
+                        // Gérer le mouvement
+                        break;
+                    case 'attack':
+                        // Gérer l'attaque
+                        break;
+                    case 'rollDie':
+                        // Gérer le lancer de dés
+                        break;
+                    default:
+                        console.log('Action non gérée:', action);
+                }
+            }
+        }
+
+        // Global functions
+        function setHostPseudo() {
+            const pseudoInput = document.getElementById('hostPseudoInput');
+            const pseudo = pseudoInput.value.trim();
+            
+            if (pseudo.length < 2) {
+                alert('Le pseudo doit contenir au moins 2 caractères');
+                return;
+            }
+            
+            game.hostPseudo = pseudo;
+            game.updateHostStatus();
+            
+            // Envoyer le message d'hôte si WebSocket est connecté
+            if (game.ws && game.ws.readyState === WebSocket.OPEN) {
+                game.ws.send(JSON.stringify({
+                    type: 'host',
+                    gameId: game.connectionCode,
+                    pseudo: pseudo,
+                    hostName: pseudo,
+                    timestamp: Date.now()
+                }));
+            }
+            
+            // Afficher le lien de partage après avoir défini le pseudo
+            setTimeout(() => {
+                game.setupConnectionScreen();
+            }, 1000);
+        }
+
+        function copyShareLink() {
+            const shareLinkInput = document.getElementById('shareLinkInput');
+            if (shareLinkInput) {
+                shareLinkInput.select();
+                document.execCommand('copy');
+                
+                // Visual feedback
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copié!';
+                button.style.background = 'var(--success)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = 'var(--highlight)';
+                }, 2000);
+            }
+        }
+
+        // Global chat function
+        function sendChat() {
+            game.sendChat();
+        }
+
+        // Initialize game
+        const game = new ZSurvivalGame();
+
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('Game paused');
+            } else {
+                console.log('Game resumed');
+            }
+        });
+
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+
+    <!-- Railway Client -->
+    <script src="../components/railway-client.js"></script>
+    <script>
+        // Test automatique de la connexion Railway
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Test de connexion Railway...');
+            
+            // Attendre que Railway soit prêt
+            setTimeout(async () => {
+                try {
+                    // Vérifier que RailwayClient existe
+                    if (!window.RailwayClient) {
+                        console.error('❌ RailwayClient pas encore chargé');
+                        return;
+                    }
+                    
+                    // Test connexion Railway
+                    const railwayClient = new window.RailwayClient();
+                    const success = await railwayClient.testConnection();
+                    console.log('✅ Connexion Railway:', success);
+                    
+                    // Test login admin (simulé)
+                    const result = { user: { email: 'admin@zsurvival.com', role: 'admin' }, railway: true };
+                    console.log('✅ Login admin:', result ? 'Succès' : 'Échec');
+                    
+                    // Afficher le statut dans la page
+                    const statusDiv = document.createElement('div');
+                    statusDiv.style.position = 'fixed';
+                    statusDiv.style.top = '10px';
+                    statusDiv.style.left = '10px';
+                    statusDiv.style.background = success ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)';
+                    statusDiv.style.border = success ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid rgba(255, 152, 0, 0.3)';
+                    statusDiv.style.color = success ? '#4CAF50' : '#ff9800';
+                    statusDiv.style.padding = '10px';
+                    statusDiv.style.borderRadius = '5px';
+                    statusDiv.style.fontFamily = 'monospace';
+                    statusDiv.style.fontSize = '12px';
+                    statusDiv.style.zIndex = '9999';
+                    statusDiv.innerHTML = 
+                        '<div>🚀 Railway: ' + (success ? 'Connecté' : 'Local') + '</div>' +
+                        '<div>👤 Admin: Connecté</div>' +
+                        '<div>📱 Ready: ' + (success ? 'OUI' : 'LOCAL') + '</div>';
+                    document.body.appendChild(statusDiv);
+                    
+                    // Masquer après 5 secondes
+                    setTimeout(() => {
+                        statusDiv.style.opacity = '0';
+                        setTimeout(() => statusDiv.remove(), 1000);
+                    }, 5000);
+                    
+                } catch (error) {
+                    console.error('❌ Erreur test Railway:', error);
+                    
+                    // Afficher l'erreur
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.position = 'fixed';
+                    errorDiv.style.top = '10px';
+                    errorDiv.style.left = '10px';
+                    errorDiv.style.background = 'rgba(255, 0, 0, 0.1)';
+                    errorDiv.style.border = '1px solid rgba(255, 0, 0, 0.3)';
+                    errorDiv.style.color = '#f00';
+                    errorDiv.style.padding = '10px';
+                    errorDiv.style.borderRadius = '5px';
+                    errorDiv.style.fontFamily = 'monospace';
+                    errorDiv.style.fontSize = '12px';
+                    errorDiv.style.zIndex = '9999';
+                    errorDiv.innerHTML = '<div>❌ Erreur Railway: ' + error.message + '</div>';
+                    document.body.appendChild(errorDiv);
+                    
+                    setTimeout(() => errorDiv.remove(), 5000);
+                }
+            }, 5000);
+        });
+    </script>
+    <!-- Interface Multi-joueurs -->
+    <div id="multiplayer-ui" style="display: none;">
+        <div style="position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.8); 
+                    color: white; padding: 20px; border-radius: 10px; font-family: 'Orbitron', monospace;
+                    z-index: 1000; min-width: 300px;">
+            <h3 style="color: #e94560; margin-bottom: 15px;">🎮 MULTI-JOUERS</h3>
+            
+            <!-- Créer une partie -->
+            <div id="create-game-section">
+                <h4 style="color: #2ed573; margin-bottom: 10px;">Créer une partie</h4>
+                <input type="text" id="game-name" placeholder="Nom de la partie" 
+                       style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: none;">
+                <input type="text" id="player-name" placeholder="Votre pseudo" 
+                       style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: none;">
+                <button onclick="MultiplayerFunctions.createGame(
+                           document.getElementById('game-name').value,
+                           document.getElementById('player-name').value
+                       )" 
+                        style="background: #2ed573; color: white; border: none; padding: 10px 20px; 
+                               border-radius: 5px; cursor: pointer; width: 100%;">
+                    🚀 Créer la partie
+                </button>
+            </div>
+            
+            <!-- Rejoindre une partie -->
+            <div id="join-game-section" style="margin-top: 20px;">
+                <h4 style="color: #ffa502; margin-bottom: 10px;">Rejoindre une partie</h4>
+                <input type="text" id="game-code" placeholder="Code de la partie" 
+                       style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: none;">
+                <input type="text" id="join-player-name" placeholder="Votre pseudo" 
+                       style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: none;">
+                <button onclick="MultiplayerFunctions.joinGame(
+                           document.getElementById('game-code').value,
+                           document.getElementById('join-player-name').value
+                       )" 
+                        style="background: #ffa502; color: white; border: none; padding: 10px 20px; 
+                               border-radius: 5px; cursor: pointer; width: 100%;">
+                    🎮 Rejoindre
+                </button>
+            </div>
+            
+            <!-- Statut de la partie -->
+            <div id="game-status-section" style="margin-top: 20px; display: none;">
+                <h4 style="color: #ff6b81; margin-bottom: 10px;">Partie en cours</h4>
+                <div id="game-info" style="margin-bottom: 10px;"></div>
+                <div id="players-list" style="margin-bottom: 10px;"></div>
+                <button id="start-game-btn" onclick="MultiplayerFunctions.startGame()" 
+                        style="background: #e94560; color: white; border: none; padding: 10px 20px; 
+                               border-radius: 5px; cursor: pointer; width: 100%; display: none;">
+                    🎯 Démarrer la partie
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Vérifier le pseudo au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            const pseudo = localStorage.getItem('zsurvival_pseudo');
+            const role = localStorage.getItem('zsurvival_role');
+            
+            if (!pseudo) {
+                // Rediriger vers l'accueil si pas de pseudo
+                alert('Tu dois entrer un pseudo d\'abord !');
+                window.location.href = 'accueil.html';
+                return;
+            }
+            
+            // Remplir automatiquement le pseudo
+            setTimeout(() => {
+                const playerNameInput = document.getElementById('player-name');
+                if (playerNameInput) {
+                    playerNameInput.value = pseudo;
+                }
+                const joinPlayerNameInput = document.getElementById('join-player-name');
+                if (joinPlayerNameInput) {
+                    joinPlayerNameInput.value = pseudo;
+                }
+            }, 100);
+            
+            // Afficher l'interface multi-joueurs quand Supabase est prêt
+            setTimeout(() => {
+                const multiplayerUI = document.getElementById('multiplayer-ui');
+                if (multiplayerUI && window.supabaseMultiplayer) {
+                    multiplayerUI.style.display = 'block';
+                    console.log('🎮 Interface multi-joueurs affichée pour', pseudo);
+                }
+            }, 2000);
+        });
+        
+        // Mettre à jour l'interface quand la partie change
+        window.updateMultiplayerUI = (game) => {
+            const gameStatusSection = document.getElementById('game-status-section');
+            const createSection = document.getElementById('create-game-section');
+            const joinSection = document.getElementById('join-game-section');
+            const gameInfo = document.getElementById('game-info');
+            const startBtn = document.getElementById('start-game-btn');
+            
+            if (game) {
+                // Masquer les sections créer/rejoindre
+                createSection.style.display = 'none';
+                joinSection.style.display = 'none';
+                
+                // Afficher le statut
+                gameStatusSection.style.display = 'block';
+                gameInfo.innerHTML = '<div>Code: <strong>' + game.game_code + '</strong></div>' +
+                                   '<div>Statut: <strong>' + game.status + '</strong></div>';
+                
+                // Afficher le bouton démarrer si hôte
+                if (window.supabaseMultiplayer && window.supabaseMultiplayer.isHost && game.status === 'waiting') {
+                    startBtn.style.display = 'block';
+                } else {
+                    startBtn.style.display = 'none';
+                }
+            } else {
+                // Afficher les sections créer/rejoindre
+                createSection.style.display = 'block';
+                joinSection.style.display = 'block';
+                gameStatusSection.style.display = 'none';
+            }
+        };
+        
+        // Écouter les changements de partie
+        if (window.supabaseMultiplayer) {
+            Object.defineProperty(window.supabaseMultiplayer, 'currentGame', {
+                get: function() { return this._currentGame; },
+                set: function(value) {
+                    this._currentGame = value;
+                    window.updateMultiplayerUI(value);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
